@@ -1,63 +1,78 @@
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <netinet/in.h>
-#include <netdb.h>
+/* Client code */
+
 #include <stdio.h>
-#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <errno.h>
+#include <string.h>
 #include <arpa/inet.h>
+#include <unistd.h>
+#include <netinet/in.h>
 
-int main(int argc, char *argv[])
+#define PORT_NUMBER     5000
+#define SERVER_ADDRESS  "169.254.37.95"
+#define FILENAME   "testfile.txt"
+
+int main(int argc, char **argv)
 {
-    int sockfd = 0, n = 0;
-    char recvBuff[1024];
-    struct sockaddr_in serv_addr;
+        int client_socket;
+        ssize_t len;
+        struct sockaddr_in remote_addr;
+        char buffer[BUFSIZ];
+        int file_size;
+        FILE *received_file;
+        int remain_data = 0;
 
-    if(argc != 2)
-    {
-        printf("\n Usage: %s <ip of server> \n",argv[0]);
-        return 1;
-    }
+        /* Zeroing remote_addr struct */
+        memset(&remote_addr, 0, sizeof(remote_addr));
 
-    memset(recvBuff, '0',sizeof(recvBuff));
-    if((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-    {
-        printf("\n Error : Could not create socket \n");
-        return 1;
-    }
+        /* Construct remote_addr struct */
+        remote_addr.sin_family = AF_INET;
+        inet_pton(AF_INET, SERVER_ADDRESS, &(remote_addr.sin_addr));
+        remote_addr.sin_port = htons(PORT_NUMBER);
 
-    memset(&serv_addr, '0', sizeof(serv_addr));
-
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(5000);
-
-    if(inet_pton(AF_INET, argv[1], &serv_addr.sin_addr)<=0)
-    {
-        printf("\n inet_pton error occured\n");
-        return 1;
-    }
-
-    if( connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-       printf("\n Error : Connect Failed \n");
-       return 1;
-    }
-
-    while ( (n = read(sockfd, recvBuff, sizeof(recvBuff)-1)) > 0)
-    {
-        recvBuff[n] = 0;
-        if(fputs(recvBuff, stdout) == EOF)
+        /* Create client socket */
+        client_socket = socket(AF_INET, SOCK_STREAM, 0);
+        if (client_socket == -1)
         {
-            printf("\n Error : Fputs error\n");
+                fprintf(stderr, "Error creating socket --> %s\n", strerror(errno));
+
+                exit(EXIT_FAILURE);
         }
-    }
 
-    if(n < 0)
-    {
-        printf("\n Read error \n");
-    }
+        /* Connect to the server */
+        if (connect(client_socket, (struct sockaddr *)&remote_addr, sizeof(struct sockaddr)) == -1)
+        {
+                fprintf(stderr, "Error on connect --> %s\n", strerror(errno));
 
-    return 0;
+                exit(EXIT_FAILURE);
+        }
+
+        /* Receiving file size */
+        recv(client_socket, buffer, BUFSIZ, 0);
+        file_size = atoi(buffer);
+        //fprintf(stdout, "\nFile size : %d\n", file_size);
+
+        received_file = fopen(FILENAME, "w");
+        if (received_file == NULL)
+        {
+                fprintf(stderr, "Failed to open file foo --> %s\n", strerror(errno));
+
+                exit(EXIT_FAILURE);
+        }
+
+        remain_data = file_size;
+
+        while ((remain_data > 0) && ((len = recv(client_socket, buffer, BUFSIZ, 0)) > 0))
+        {
+                fwrite(buffer, sizeof(char), len, received_file);
+                remain_data -= len;
+                fprintf(stdout, "Receive %d bytes and we hope :- %d bytes\n", len, remain_data);
+        }
+        fclose(received_file);
+
+        close(client_socket);
+
+        return 0;
 }
