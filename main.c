@@ -17,7 +17,7 @@
 
 #define PORT_NUMBER     5000
 #define SERVER_ADDRESS  "169.254.37.95"
-#define FILENAME   "/home/sahand/socketHPS/testfile.txt"
+#define FILENAME   "/home/sahand/socketHPS/RT_NormQuantdata"
 #define RT_DATA_CHUNK_SIZE 460 //23*20
 
 int main(int argc, char **argv)
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 	int file_size;
 	FILE *received_file;
 	int remain_data = 0;
-
+	int buffsize;
 	/* Zeroing remote_addr struct */
 	memset(&remote_addr, 0, sizeof(remote_addr));
 
@@ -100,32 +100,38 @@ int main(int argc, char **argv)
 	}
 
 	/* Receiving file size */
-	for (sequences = 0; sequences < 800; sequences++)
+	for (sequences = 0; sequences < 2; sequences++)
 	{
+		printf("in main loop\n");
 		recv(client_socket, buffer, BUFSIZ, 0);
 		file_size = atoi(buffer);
 		fprintf(stdout, "\nFile size : %d\n", file_size);
 
+		//received_file = fclose(fopen(FILENAME, "w"));
 		received_file = fopen(FILENAME, "w");
 		if (received_file == NULL)
 		{
-				fprintf(stderr, "Failed to open file foo --> %s\n", strerror(errno));
+				fprintf(stderr, "Failed to open file --> %s\n", strerror(errno));
 
 				exit(EXIT_FAILURE);
 		}
-
 		remain_data = file_size;
 
-		while ((remain_data > 0) && ((len = recv(client_socket, buffer, BUFSIZ, 0)) > 0))
+		while ((remain_data > 0)&&((len = recv(client_socket, buffer, BUFSIZ, 0)) > 0))
 		{
 				fwrite(buffer, sizeof(char), len, received_file);
 				remain_data -= len;
-				fprintf(stdout, "Receive %d bytes , %d bytes remaining\n", len, remain_data);
+				//if (remain_data < BUFSIZ)
+				//	buffsize = remain_data;
+				//bzero(buffer,BUFSIZ);
+				//if (len == 0 || len != BUFSIZ)
+				//	break;
+				fprintf(stdout, "Received %d bytes , %d bytes remaining\n", len, remain_data);
 		}
 		//code for accelerator here
 
-
-
+		fclose(received_file);
+		printf("start acc for sequence %d", sequences);
 		for (timesteps=0; timesteps < 10; timesteps++){
 			prt_step = timesteps +'0';
 			//snprintf(seqstr, sizeof(seqstr),"%d", sequences);
@@ -210,13 +216,14 @@ int main(int argc, char **argv)
 			}
 
 		}
-		free(xdata);
-		munmap_peripherals();
-		close_physical_memory_device();
 		snprintf(message, sizeof(message),  "sequence processed\n");
 		send(client_socket, message, BUFSIZ,0);
+
 	}
-	fclose(received_file);
+	free(xdata);
+	munmap_peripherals();
+	close_physical_memory_device();
+
 
 	close(client_socket);
 
