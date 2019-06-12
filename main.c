@@ -14,6 +14,7 @@
 #include "parser.h"
 #include "hwlib.h"
 #include "transfer_data.h"
+#include "alt_timers.h"
 
 #define PORT_NUMBER     5000
 #define SERVER_ADDRESS  "169.254.37.95"
@@ -53,6 +54,7 @@ int main(int argc, char **argv)
 	uint8_t hps_write_new_batch = 0;
 	int32_t sequences = 0;
 	FILE* res_file;
+	char file_size[256];
 	char filename[25];
 	char prt_step;
 	char seqstr[3];
@@ -70,7 +72,7 @@ int main(int argc, char **argv)
 	char message[33];
 	struct sockaddr_in remote_addr;
 	char buffer[BUFSIZ]; //defined in stdio.h
-	int file_size;
+	int fileSize;
 	FILE *received_file;
 	int remain_data = 0;
 	int buffsize;
@@ -100,12 +102,12 @@ int main(int argc, char **argv)
 	}
 
 	/* Receiving file size */
-	for (sequences = 0; sequences < 2; sequences++)
+	for (sequences = 0; sequences < 800; sequences++)
 	{
 		printf("in main loop\n");
-		recv(client_socket, buffer, BUFSIZ, 0);
-		file_size = atoi(buffer);
-		fprintf(stdout, "\nFile size : %d\n", file_size);
+		recv(client_socket, file_size, sizeof(file_size), 0);
+		fileSize = atoi(file_size);
+		fprintf(stdout, "\nFile size : %d\n", fileSize);
 
 		//received_file = fclose(fopen(FILENAME, "w"));
 		received_file = fopen(FILENAME, "w");
@@ -115,7 +117,7 @@ int main(int argc, char **argv)
 
 				exit(EXIT_FAILURE);
 		}
-		remain_data = file_size;
+		remain_data = fileSize;
 
 		while ((remain_data > 0)&&((len = recv(client_socket, buffer, BUFSIZ, 0)) > 0))
 		{
@@ -142,13 +144,19 @@ int main(int argc, char **argv)
 			printf("no problem parsing RT_datastream file memory\n");
 
 			printf("iteration number %d\n", timesteps);
-
+			alt_gpt_all_tmr_init();
+			alt_gpt_mode_set(ALT_GPT_OSC1_TMR0, ALT_GPT_RESTART_MODE_ONESHOT);
+			uint32_t a = alt_gpt_counter_get(ALT_GPT_OSC1_TMR0);
 			write_accelerator(0, 3); // xocram B port in FPGA mode + trigger accelerator
+			alt_gpt_tmr_start(ALT_GPT_OSC1_TMR0);
 			write_accelerator(0, 2); //  deassert trigger
 
 			while(hps_DEBUG_read == 0){
 				hps_DEBUG_read =  read_accelerator(1) >> 1;
 			}
+			alt_gpt_tmr_stop(ALT_GPT_OSC1_TMR0);
+			uint32_t  b = alt_gpt_counter_get(ALT_GPT_OSC1_TMR0);
+			printf(b-a);
 			hps_DEBUG_read = 0;
 			write_accelerator(0, 0); //switch back to HPS mode
 			read_xocram(1, xocram, DEBUG_data_words);
@@ -217,7 +225,7 @@ int main(int argc, char **argv)
 
 		}
 		snprintf(message, sizeof(message),  "sequence processed\n");
-		send(client_socket, message, BUFSIZ,0);
+		send(client_socket, message, sizeof(message),0);
 
 	}
 	free(xdata);
