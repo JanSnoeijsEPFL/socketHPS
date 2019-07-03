@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 	/* Receiving file size */
 	for (sequences = 0; sequences < 800; sequences++)
 	{
-		printf("in main loop\n");
+		//printf("in main loop\n");
 		recv(client_socket, file_size, sizeof(file_size), 0);
 		fileSize = atoi(file_size);
 		fprintf(stdout, "\nFile size : %d\n", fileSize);
@@ -143,17 +143,17 @@ int main(int argc, char **argv)
 		//code for accelerator here
 
 		fclose(received_file);
-		printf("start acc for sequence %d", sequences);
+		//printf("start acc for sequence %d", sequences);
 		for (timesteps=0; timesteps < 10; timesteps++){
 			prt_step = timesteps +'0';
 			//snprintf(seqstr, sizeof(seqstr),"%d", sequences);
 			snprintf(filename,sizeof(filename), "RT_NormQuantdata", seqstr);
-			printf("filename: %s\n", filename);
+			//printf("filename: %s\n", filename);
 			parse_rtdata(filename, xdata, timesteps);
 			xocram_fill_RT(xocram, xdata);
-			printf("no problem parsing RT_datastream file memory\n");
+			//printf("no problem parsing RT_datastream file memory\n");
 
-			printf("iteration number %d\n", timesteps);
+			//printf("iteration number %d\n", timesteps);
 
 			write_accelerator(0, 3); // xocram B port in FPGA mode + trigger accelerator
 			//gettimeofday(&st,NULL);
@@ -211,7 +211,7 @@ int main(int argc, char **argv)
 
 			if (timesteps == 9)
 			{
-				printf("last iter\n");
+				//printf("last iter\n");
 				write_accelerator(6,0);
 				res0 = read_accelerator(6);
 				write_accelerator(6,1);
@@ -222,7 +222,7 @@ int main(int argc, char **argv)
 				if (!res_file)
 					printf("file never opened\n");
 				else{
-					printf("opened resfile\n");
+					//printf("opened resfile\n");
 					fprintf(res_file, "%f ",((float)(res0))/2048);
 					fprintf(res_file, "%f ",((float)(res1))/2048);
 					fprintf(res_file, "%f\n",((float)(res2))/2048);

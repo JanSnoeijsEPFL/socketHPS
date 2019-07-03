@@ -84,9 +84,9 @@ void parse_rtdata(char* file, int32_t* words, int32_t chunk_number){
 	if (words != NULL)
 	{
 		rtdata_file = fopen(file, "r");
-		printf("parsing RT files\n");
+		//printf("parsing RT files\n");
 		int32_t* in_data = malloc(5*sizeof(int32_t));
-		printf("pointer malloc : %p\n", in_data);
+		//printf("pointer malloc : %p\n", in_data);
 
 		uint32_t i=0, j=0, k=0;
 		uint32_t word_cnt = 0;
@@ -155,7 +155,7 @@ void parse_rtdata(char* file, int32_t* words, int32_t chunk_number){
 
 		}while(word_cnt < RTDATA_CHUNK_SIZE*chunk_number+RTDATA_CHUNK_SIZE);
 		fclose(rtdata_file);
-		printf("pointer malloc : %p\n", in_data);
+		//printf("pointer malloc : %p\n", in_data);
 
 		free(in_data);
 	}
