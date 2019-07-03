@@ -156,23 +156,23 @@ int main(int argc, char **argv)
 			printf("iteration number %d\n", timesteps);
 
 			write_accelerator(0, 3); // xocram B port in FPGA mode + trigger accelerator
-			gettimeofday(&st,NULL);
+			//gettimeofday(&st,NULL);
 			write_accelerator(0, 2); //  deassert trigger
 
 			while(hps_DEBUG_read == 0){
 				hps_DEBUG_read =  read_accelerator(1) >> 1;
 			}
-			gettimeofday(&et,NULL);
+			/*gettimeofday(&et,NULL);
 			int elapsed = ((et.tv_sec - st.tv_sec)*1000000) + (et.tv_usec - st.tv_usec);
 			printf("Accelerator time per time step: %d us\n", elapsed);
-			printf("frequency\n");
+			printf("frequency\n");*/
 			hps_DEBUG_read = 0;
 			write_accelerator(0, 0); //switch back to HPS mode
 			read_xocram(1, xocram, DEBUG_data_words);
-			get_data_maxp(DEBUG_data_maxp, DEBUG_data_words);
-			get_data_gru(DEBUG_data_gru, DEBUG_data_words+20*22);
+			//get_data_maxp(DEBUG_data_maxp, DEBUG_data_words);
+			//get_data_gru(DEBUG_data_gru, DEBUG_data_words+20*22);
 
-			if (sequences == 0){
+			/*if (sequences == 0){
 				snprintf(filename, sizeof(filename), "res_acc/MAXP_t%c.txt", prt_step);
 				res_file = fopen(filename, "w");
 				printf("%s\n", filename);
@@ -207,7 +207,7 @@ int main(int argc, char **argv)
 					}
 				}
 				fclose(res_file);
-			}
+			}*/
 
 			if (timesteps == 9)
 			{
