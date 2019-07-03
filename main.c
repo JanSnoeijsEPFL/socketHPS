@@ -61,7 +61,7 @@ int main(int argc, char **argv)
 	char prt_step;
 	char seqstr[3];
 	char seq_nb[3];
-	uint32_t res0, res1, res2;
+	float res0, res1, res2;
 	printf("no problem before new memory allocation\n");
 	int32_t* xdata = malloc(RTDATA_CHUNK_SIZE * sizeof(int32_t));
 	printf("no problem while allocating new memory\n");
@@ -233,7 +233,7 @@ int main(int argc, char **argv)
 			}
 
 		}
-		snprintf(message, sizeof(message),  "sequence processed, results: %d, %d, %d\n", res0, res1, res2);
+		snprintf(message, sizeof(message),  "sequence processed, results: %.6f, %.6f, %.6f\n", res0/2048, res1/2048, res2/2048);
 		send(client_socket, message, sizeof(message),0);
 
 	}
