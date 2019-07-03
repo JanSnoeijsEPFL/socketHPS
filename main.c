@@ -233,7 +233,7 @@ int main(int argc, char **argv)
 			}
 
 		}
-		snprintf(message, sizeof(message),  "sequence processed, results: %.6f, %.6f, %.6f\n", res0/2048, res1/2048, res2/2048);
+		snprintf(message, sizeof(message),  "sequence processed, results: %.6f%.6f,%.6f\n", res0/2048, res1/2048, res2/2048);
 		send(client_socket, message, sizeof(message),0);
 
 	}
