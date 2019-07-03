@@ -72,7 +72,7 @@ int main(int argc, char **argv)
 	fclose(res_file);
 	int client_socket;
 	ssize_t len;
-	char message[50];
+	char message[60];
 	struct sockaddr_in remote_addr;
 	char buffer[BUFSIZ]; //defined in stdio.h
 	int fileSize;
