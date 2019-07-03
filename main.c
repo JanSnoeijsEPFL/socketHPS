@@ -9,12 +9,14 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <netinet/in.h>
+#include <sys/time.h>
 
 #include "testsdram.h"
 #include "parser.h"
 #include "hwlib.h"
 #include "transfer_data.h"
 #include "alt_timers.h"
+#include "alt_globaltmr.h"
 
 #define PORT_NUMBER     5000
 #define SERVER_ADDRESS  "169.254.37.95"
@@ -59,6 +61,7 @@ int main(int argc, char **argv)
 	char prt_step;
 	char seqstr[3];
 	char seq_nb[3];
+	uint32_t res0, res1, res2;
 	printf("no problem before new memory allocation\n");
 	int32_t* xdata = malloc(RTDATA_CHUNK_SIZE * sizeof(int32_t));
 	printf("no problem while allocating new memory\n");
@@ -69,13 +72,14 @@ int main(int argc, char **argv)
 	fclose(res_file);
 	int client_socket;
 	ssize_t len;
-	char message[33];
+	char message[50];
 	struct sockaddr_in remote_addr;
 	char buffer[BUFSIZ]; //defined in stdio.h
 	int fileSize;
 	FILE *received_file;
 	int remain_data = 0;
 	int buffsize;
+	struct timeval st, et;
 	/* Zeroing remote_addr struct */
 	memset(&remote_addr, 0, sizeof(remote_addr));
 
@@ -83,7 +87,13 @@ int main(int argc, char **argv)
 	remote_addr.sin_family = AF_INET;
 	inet_pton(AF_INET, SERVER_ADDRESS, &(remote_addr.sin_addr));
 	remote_addr.sin_port = htons(PORT_NUMBER);
-
+	int i;
+	/*for (i=0; i <10; i++){
+		gettimeofday(&st,NULL);
+		gettimeofday(&et,NULL);
+		int elapsed = ((et.tv_sec - st.tv_sec)*1000000) + (et.tv_usec - st.tv_usec);
+		printf("Accelerator time per time step: %d us\n", elapsed);
+	}*/
 	/* Create client socket */
 	client_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (client_socket == -1)
@@ -144,19 +154,18 @@ int main(int argc, char **argv)
 			printf("no problem parsing RT_datastream file memory\n");
 
 			printf("iteration number %d\n", timesteps);
-			alt_gpt_all_tmr_init();
-			alt_gpt_mode_set(ALT_GPT_OSC1_TMR0, ALT_GPT_RESTART_MODE_ONESHOT);
-			uint32_t a = alt_gpt_counter_get(ALT_GPT_OSC1_TMR0);
+
 			write_accelerator(0, 3); // xocram B port in FPGA mode + trigger accelerator
-			alt_gpt_tmr_start(ALT_GPT_OSC1_TMR0);
+			gettimeofday(&st,NULL);
 			write_accelerator(0, 2); //  deassert trigger
 
 			while(hps_DEBUG_read == 0){
 				hps_DEBUG_read =  read_accelerator(1) >> 1;
 			}
-			alt_gpt_tmr_stop(ALT_GPT_OSC1_TMR0);
-			uint32_t  b = alt_gpt_counter_get(ALT_GPT_OSC1_TMR0);
-			printf(b-a);
+			gettimeofday(&et,NULL);
+			int elapsed = ((et.tv_sec - st.tv_sec)*1000000) + (et.tv_usec - st.tv_usec);
+			printf("Accelerator time per time step: %d us\n", elapsed);
+			printf("frequency\n");
 			hps_DEBUG_read = 0;
 			write_accelerator(0, 0); //switch back to HPS mode
 			read_xocram(1, xocram, DEBUG_data_words);
@@ -204,19 +213,19 @@ int main(int argc, char **argv)
 			{
 				printf("last iter\n");
 				write_accelerator(6,0);
-				uint32_t y0 = read_accelerator(6);
+				res0 = read_accelerator(6);
 				write_accelerator(6,1);
-				uint32_t y1 = read_accelerator(6);
+				res1 = read_accelerator(6);
 				write_accelerator(6,2);
-				uint32_t y2 = read_accelerator(6);
+				res2 = read_accelerator(6);
 				res_file = fopen("res_acc/Y.txt", "a");
 				if (!res_file)
 					printf("file never opened\n");
 				else{
 					printf("opened resfile\n");
-					fprintf(res_file, "%f ",((float)(y0))/2048);
-					fprintf(res_file, "%f ",((float)(y1))/2048);
-					fprintf(res_file, "%f\n",((float)(y2))/2048);
+					fprintf(res_file, "%f ",((float)(res0))/2048);
+					fprintf(res_file, "%f ",((float)(res1))/2048);
+					fprintf(res_file, "%f\n",((float)(res2))/2048);
 
 				}
 				fclose(res_file);
@@ -224,7 +233,7 @@ int main(int argc, char **argv)
 			}
 
 		}
-		snprintf(message, sizeof(message),  "sequence processed\n");
+		snprintf(message, sizeof(message),  "sequence processed, results: %d, %d, %d\n", res0, res1, res2);
 		send(client_socket, message, sizeof(message),0);
 
 	}

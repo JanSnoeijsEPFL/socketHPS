@@ -41,9 +41,12 @@ void   *virtual_hw_base =NULL;
 //void *virtual_xOCRAM_base = NULL;
 
 uint32_t   *hps_gpio     = NULL;
-
+uint32_t *hps_osc1 = NULL;
 size_t hps_gpio_span = ALT_GPIO1_UB_ADDR - ALT_GPIO1_LB_ADDR + 1;
 size_t hps_gpio_ofst = ALT_GPIO1_OFST;
+
+size_t hps_osc1_span = ALT_OSC1TMR0_UB_ADDR - ALT_OSC1TMR0_LB_ADDR+1;
+size_t hps_osc1_ofst = ALT_OSC1TMR0_OFST;
 
 uint32_t *fpga_accelerator = NULL; // lightweight bridge slave
 //uint32_t *shared_sdram = NULL;

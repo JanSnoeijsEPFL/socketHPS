@@ -38,6 +38,14 @@ void mmap_hps_peripherals() {
         close(fd_dev_mem);
         exit(EXIT_FAILURE);
     }
+
+    hps_osc1 = mmap(NULL, hps_osc1_span, PROT_READ | PROT_WRITE, MAP_SHARED, fd_dev_mem, hps_gpio_ofst);
+    if (hps_osc1 == MAP_FAILED) {
+            printf("Error: hps_osc1 mmap() failed.\n");
+            printf("    errno = %s\n", strerror(errno));
+            close(fd_dev_mem);
+            exit(EXIT_FAILURE);
+    }
 }
 
 void munmap_hps_peripherals() {
@@ -48,7 +56,15 @@ void munmap_hps_peripherals() {
         exit(EXIT_FAILURE);
     }
 
+    if (munmap(hps_osc1, hps_osc1_span) != 0) {
+        printf("Error: hps_osc1 munmap() failed\n");
+        printf("    errno = %s\n", strerror(errno));
+        close(fd_dev_mem);
+        exit(EXIT_FAILURE);
+    }
+
     hps_gpio = NULL;
+    hps_osc1 = NULL;
 }
 
 void mmap_fpga_peripherals() {
